@@ -6,7 +6,7 @@ import time
 import warnings
 import torch.nn as nn
 
-parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+parser = argparse.ArgumentParser(description='final project')
 #convblock -- torch.nn.Conv2d(), torch.nn.BatchNorm2D, torch nn LeakyRelu, torch.nn.conv2D
 
 class FourierLayer(nn.Module):
