@@ -1,0 +1,30 @@
+OSC Setup Guide
+
+
+First run the following two commands to create a conda environment:
+
+ module load python
+ conda create -n local3 python=3.9
+
+Now enter the conda environment
+
+ source activate local3
+
+To get medleydb up and running do the following
+ cd /users/PAS2089/menart24/Project/medleydb
+ conda install pip
+ pip install .
+ pip install pyyaml==5.4.1
+
+Also, you should add the following line
+ export MEDLEYDB_PATH="/users/PAS2089/menart24/Project/medleydb"
+to YOUR .bashrc. The .bashrc file is located in your home directory.
+After you do this you should run
+ source .bashrc
+
+You will also need pandas for my code
+ pip install pandas
+
+Upon subsequent logins, you will need to run the following two lines again
+ module load python
+ source activate local3
