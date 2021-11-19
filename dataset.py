@@ -10,6 +10,7 @@ NOTES = []
 for oct in range(2,6): #do octaves 2-5
 	NOTES += [x+str(oct) for x in octave]
 NOTES = np.array(NOTES)
+NUM_CLASSES = NOTES.shape[0]+1 #extra class for NO_VOICE
 
 NO_VOICE = "None"
 
@@ -23,7 +24,7 @@ def datify_track(track_name, preprocess=False):
 	x_data is a an array of data windows 
 	y_data is a an array of one hot vectors containin the label for each window as a one-hot vector'''
 	#Handle to mdb processor
-	mtrack = mdb.Multitrack(track_name)
+	mtrack = mdb.MultiTrack(track_name)
 
 	## Read/Format x data
 	hop_size = 80 #hop size used by paper 
@@ -50,7 +51,7 @@ def datify_track(track_name, preprocess=False):
 
 	## Read/Format y data
 	# get id of dominant vocal stem
-	vocal_stems = [stem_id for stem_id in range(len(mtrack.stems)) if is_singer(mtrack.stem[stem_id].instrument)]
+	vocal_stems = [stem_id+1 for stem_id in range(len(mtrack.stems)) if is_singer(mtrack.stems[stem_id+1].instrument[0])]
 	vocal_ranks = []
 	melody_stems = list(mtrack.melody_rankings.keys())
 	melodic_vocal_stems = [stem_id for stem_id in vocal_stems if stem_id in melody_stems]
@@ -62,8 +63,8 @@ def datify_track(track_name, preprocess=False):
 			dominant_vocal_stem_id = stem_id
 
 	#get labels for that vocal stem
-	if(dominant_vocal_stem_id = 999999):
-		print("No dominant vocal track for " track_name)
+	if(dominant_vocal_stem_id == 999999):
+		print("No dominant vocal track for " + track_name)
 		return -1
 
 	annos = np.array(mtrack.stems[dominant_vocal_stem_id].pitch_annotation)
@@ -72,15 +73,17 @@ def datify_track(track_name, preprocess=False):
 
 	# get median pitch label for each window
 	num_windows = x_data.shape[0]
-	y_data = np.empty((num_windows,num_classes))
+	y_data = np.empty((num_windows,NUM_CLASSES))
+	#import pdb;pdb.set_trace()
 	for i in range(num_windows):
 		start_time = i*hop_size / samp_rate
-		end_time = (i*window_size+window_size) / samp_rate
+		end_time = (i*hop_size+window_size) / samp_rate
 
 		#get frequency labels which occur during window time
 		win_freqs = anno_freqs[np.where(np.logical_and(anno_times >= start_time, anno_times <= end_time))[0]]
 		win_notes=get_pitch_labels(win_freqs)
-		dominant_note = np.mode(win_notes) #May want to change this
+		dominant_note = stats.mode(win_notes)[0][0] #May want to change this
+		#print(dominant_note)
 		y_data[i] = get_note_one_hot(dominant_note)
 
 
@@ -91,16 +94,26 @@ def is_singer(instrument):
 	return instrument == "female singer" or instrument == "male singer"
 
 #Convert frequencies to note names (slightly different than paper)
-def get_pitch_label(freqs):
-	notes = lr.hz_to_note(freq)	
-	return np.array([x for x in notes if x in NOTES else NO_VOICE])
+def get_pitch_labels(freqs):
+	if(len(freqs)==0):
+		return [NO_VOICE]
+	#print(freqs)
+	eps = 0.00001 #get rid of zero freq errors
+	notes = lr.hz_to_note(freqs+eps)	
+	return np.array([x if x in NOTES else NO_VOICE for x in notes])
 
 def get_note_one_hot(note):
-	num_classes = NOTES.shape[0]
+	if(note==NO_VOICE):
+		note_pos=-1
 	note_pos = np.where(NOTES==note)
-	return one_hot(note_pos,num_classes)
+	return one_hot(note_pos,NUM_CLASSES)
 
-def one_hot(pos,num_classes)
+def one_hot(pos,num_classes):
 	vec = np.zeros(num_classes)
 	vec[pos] = 1
 	return vec
+
+#Testing code
+track="LizNelson_Rainfall"
+datify_track(track)
+
