@@ -15,8 +15,8 @@ NUM_CLASSES = NOTES.shape[0]+1 #extra class for NO_VOICE
 NO_VOICE = "None"
 
 def get_train_test_songs():
-	train_songs = np.squeeze(pd.read_csv(train_list.csv).values)
-	test_songs = np.squeeze(pd.read_csv(test_list.csv))
+	train_songs = np.squeeze(pd.read_csv("train_list.csv").values)
+	test_songs = np.squeeze(pd.read_csv("test_list.csv"))
 	return train_songs, test_songs
 
 def datify_track(track_name, preprocess=False):
