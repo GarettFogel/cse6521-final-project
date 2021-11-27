@@ -19,6 +19,7 @@ for epoch in range(2):  # loop over the dataset multiple times
 
 		#load track data and convert to tensor
 		x_data,y_data = datify_track(song)
+		import pdb; pdb.set_trace()
 		seq_in = torch.tensor(x,dtype=torch.float)
 		labels = torch.tensor(y,dtype=torch.float)
 

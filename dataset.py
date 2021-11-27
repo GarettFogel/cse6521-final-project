@@ -114,6 +114,6 @@ def one_hot(pos,num_classes):
 	return vec
 
 #Testing code
-track="LizNelson_Rainfall"
-datify_track(track)
+#track="LizNelson_Rainfall"
+#datify_track(track)
 

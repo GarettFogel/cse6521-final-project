@@ -5,6 +5,7 @@ import shutil
 import time
 import warnings
 import torch.nn as nn
+import torch
 
 
 class FourierLayer(nn.Module):
