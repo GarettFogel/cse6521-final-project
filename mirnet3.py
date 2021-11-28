@@ -28,7 +28,29 @@ class FourierLayer(nn.Module):
     	#adjusted = torch.tensor([])
     	return torch.mul(x, torch.cos(torch.mul(self.weight, self.range).add(self.bias)))
 
+class FourierLayer2(nn.Module):
+    
+    def __init__(self, size, size2):
+        super().__init__()
+        self.frame_size, self.wave_size = size, size2
+        weight = torch.Tensor((self.frame_size, self.wave_size))
+        self.weight = nn.Parameter(weight)  
+        bias = torch.Tensor((self.frame_size, self.wave_size))
+        self.bias = nn.Parameter(bias)
+        ran = []
+        for i in range(self.frame_size):
+            ran.append(range(1, self.wave_size+1))
 
+        self.range = torch.tensor(ran)
+        #make sure the values are between 0 and 1
+
+        # initialize weights and biases
+        nn.init.uniform_(self.weight, a=0, b=1.0)
+        nn.init.uniform_(self.bias, a=0, b=1.0)
+
+    def forward(self, x):
+        #adjusted = torch.tensor([])
+        return torch.mul(x, torch.cos(torch.mul(self.weight, self.range).add(self.bias)))
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, leaky_relu_slope=0.01):
@@ -70,7 +92,7 @@ class Mirnet(nn.Module):
         self.num_class = num_class
         self.fouriers = []
         for i in range(1024):
-            self.fouriers.append(FourierLayer(seq_len))
+            self.fouriers.append(FourierLayer2(31, 513))
         self.conv_block = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=False), 
             nn.BatchNorm2d(num_features=64),
