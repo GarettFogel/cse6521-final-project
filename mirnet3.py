@@ -6,27 +6,28 @@ import time
 import warnings
 import torch.nn as nn
 import torch
-
+import math
 
 class FourierLayer(nn.Module):
     
     def __init__(self, size):
         super().__init__()
         self.size_in, self.size_out = size, size
-        weights = torch.Tensor(1)
-        self.weight = nn.Parameter(weights)  
+        weight = torch.Tensor(1)
+        self.weight = nn.Parameter(weight)  
         bias = torch.Tensor(1)
         self.bias = nn.Parameter(bias)
         self.range = torch.tensor(range(1, size+1))
         #make sure the values are between 0 and 1
 
         # initialize weights and biases
-        nn.init.uniform_(self.weights, a=0, b=1.0)
-        nn.init.uniform_(self.bias, a=0, b=1.0) #HERE'S THE THING THAT CAN BE CHANGED
+        nn.init.uniform_(self.weight, a=0, b=1.0)
+        nn.init.uniform_(self.bias, a=0, b=1.0)
 
     def forward(self, x):
     	#adjusted = torch.tensor([])
     	return torch.mul(x, torch.cos(torch.mul(self.weight, self.range).add(self.bias)))
+
 
 
 class ResBlock(nn.Module):
@@ -69,7 +70,7 @@ class Mirnet(nn.Module):
         self.num_class = num_class
         self.fouriers = []
         for i in range(1024):
-            self.fouriers.push(FourierLayer(seq_len))
+            self.fouriers.append(FourierLayer(seq_len))
         self.conv_block = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=False), 
             nn.BatchNorm2d(num_features=64),
@@ -127,6 +128,28 @@ class Mirnet(nn.Module):
         classifier_out = classifier_out.view((-1, 31, self.num_class))  
 
         return classifier_out
+    @staticmethod
+    def init_weights(m):
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Conv2d):
+                nn.init.xavier_normal_(m.weight)
+            elif isinstance(m, nn.LSTM) or isinstance(m, nn.LSTMCell):
+                for p in m.parameters():
+                    if p.data is None:
+                        continue
+
+                    if len(p.shape) >= 2:
+                        nn.init.orthogonal_(p.data)
+                    else:
+                        nn.init.normal_(p.data)
+            else:
+                if hasattr(m, 'weight') and m.weight is not None:
+                    nn.init.uniform_(m.weight)
+                if hasattr(m, 'bias') and  m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
 def empty_onehot(target: torch.Tensor, num_classes: int):
     onehot_size = target.size() + (num_classes, )
@@ -168,3 +191,5 @@ class CrossEntropyLossWithGaussianSmoothedLabels(nn.Module):
                     target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
             target_loss_sum = target_onehot-(pred_logit * t).sum(dim=self.dim)
             return target_loss_sum.mean()
+net = Mirnet()
+loss_fn = CrossEntropyLossWithGaussianSmoothedLabels()
