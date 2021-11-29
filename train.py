@@ -5,7 +5,7 @@ import dataset as ds
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels
 
 net = Mirnet()
-loss_fn = CrossEntropyLossWithGaussianSmoothedLabels()
+loss_fn = CrossEntropyLossWithGaussianSmoothedLabels(num_classes=ds.NUM_CLASSES)
 
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
@@ -44,7 +44,7 @@ for epoch in range(2):  # loop over the dataset multiple times
 
             #foward and backward pass
             preds = net.forward(seq_in)
-            loss = loss_fn.forward(preds, y_data)
+            loss = loss_fn.forward(preds, labels)
             loss.backward()
             opimizer.step()
 

@@ -193,7 +193,8 @@ class Mirnet(nn.Module):
                     nn.init.constant_(m.bias, 0)
 
 def empty_onehot(target: torch.Tensor, num_classes: int):
-    onehot_size = target.size() + (num_classes, )
+    #onehot_size = target.size() + (num_classes, )
+    onehot_size = target.size()[:-1] + (num_classes, )
     return torch.FloatTensor(*onehot_size).zero_()
 
 
@@ -224,6 +225,7 @@ class CrossEntropyLossWithGaussianSmoothedLabels(nn.Module):
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
 
         with torch.no_grad():
+            import pdb; pdb.set_trace()
             pred_logit = torch.log_softmax(pred, dim=self.dim)
             target_onehot = empty_onehot(target, self.num_classes).to(target.device)
             for dist in range(self.blur_range, -1, 1):
