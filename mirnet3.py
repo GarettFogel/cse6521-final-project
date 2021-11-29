@@ -109,7 +109,8 @@ class Mirnet(nn.Module):
         self.seq_len = seq_len  # 31
         self.num_class = num_class
         self.fouriers = []
-        for i in range(1024):
+        self.num_freqs = 513
+        for i in range(self.num_freqs):
             #self.fouriers.append(FourierLayer2(31, 1024))
             self.fouriers.append(FourierLayer3(1024))
         self.conv_block = nn.Sequential(
@@ -153,7 +154,7 @@ class Mirnet(nn.Module):
         self.apply(self.init_weights)
 
     def forward(self, x):
-        for i in range(1024):
+        for i in range(self.num_freqs):
             x = self.fouriers[i](x)
 
         convblock_out = self.conv_block(x)
@@ -161,6 +162,7 @@ class Mirnet(nn.Module):
         resblock2_out = self.res_block2(resblock1_out)
         resblock3_out = self.res_block3(resblock2_out)
         poolblock_out = self.pool_block(resblock3_out)
+        import pdb; pdb.set_trace()
         classifier_out = poolblock_out.permute(0, 2, 1, 3).contiguous().view((-1, 31, 512))
         classifier_out, _ = self.bilstm_classifier(classifier_out)  
 
@@ -169,6 +171,7 @@ class Mirnet(nn.Module):
         classifier_out = classifier_out.view((-1, 31, self.num_class))  
 
         return classifier_out
+
     @staticmethod
     def init_weights(m):
             if isinstance(m, nn.Linear):
@@ -194,7 +197,7 @@ class Mirnet(nn.Module):
 
 def empty_onehot(target: torch.Tensor, num_classes: int):
     #onehot_size = target.size() + (num_classes, )
-    onehot_size = target.size()[:-1] + (num_classes, )
+    onehot_size = (target.shape[0],target.shape[1], num_classes )
     return torch.FloatTensor(*onehot_size).zero_()
 
 
@@ -225,14 +228,41 @@ class CrossEntropyLossWithGaussianSmoothedLabels(nn.Module):
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
 
         with torch.no_grad():
-            import pdb; pdb.set_trace()
             pred_logit = torch.log_softmax(pred, dim=self.dim)
             target_onehot = empty_onehot(target, self.num_classes).to(target.device)
             for dist in range(self.blur_range, -1, 1):
                 for direction in [1, -1]:
                     blur = torch.clamp(target + (direction * dist), min=0, max=self.num_classes - 1)
                     target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
-            target_loss_sum = target_onehot-(pred_logit * t).sum(dim=self.dim)
+            target_loss_sum = target_onehot-(pred_logit *t).sum(dim=self.dim) #*t?
             return target_loss_sum.mean()
-net = Mirnet()
-loss_fn = CrossEntropyLossWithGaussianSmoothedLabels()
+
+class CrossEntropyLossWithGaussianSmoothedLabels2(nn.Module):
+    def __init__(self, num_classes=722, blur_range=3):
+        super().__init__()
+        self.dim = -1
+        self.num_classes = num_classes
+        self.blur_range = blur_range
+        self.gaussian_decays = [self.gaussian_val(dist=d) for d in range(blur_range + 1)]
+
+        self.cross_entropy = torch.nn.CrossEntropyLoss()
+
+    @staticmethod
+    def gaussian_val(dist: int, sigma=1):
+        return math.exp(-math.pow(2, dist) / (2 * math.pow(2, sigma)))
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor):
+
+        with torch.no_grad():
+            pred_logit = torch.log_softmax(pred, dim=self.dim)
+            target_onehot = empty_onehot(target, self.num_classes).to(target.device)
+            for dist in range(self.blur_range, -1, 1):
+                for direction in [1, -1]:
+                    blur = torch.clamp(target + (direction * dist), min=0, max=self.num_classes - 1)
+                    target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
+
+            import pdb; pdb.set_trace()
+            return self.cross_entropy(pred_logit, target_onehot)
+
+#net = Mirnet()
+#loss_fn = CrossEntropyLossWithGaussianSmoothedLabels()

@@ -2,10 +2,10 @@ import torch
 import torch.optim as optim
 import numpy as np
 import dataset as ds
-from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels
+from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
-net = Mirnet()
-loss_fn = CrossEntropyLossWithGaussianSmoothedLabels(num_classes=ds.NUM_CLASSES)
+net = Mirnet(num_class=ds.NUM_CLASSES)
+loss_fn = CrossEntropyLossWithGaussianSmoothedLabels2(num_classes=ds.NUM_CLASSES)
 
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
