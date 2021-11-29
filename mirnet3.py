@@ -67,7 +67,8 @@ class FourierLayer3(nn.Module):
         nn.init.uniform_(self.phase, a=0, b=1.0)
 
     def forward(self, x):
-        return torch.mul(x, torch.cos(torch.mul(self.freq, torch.arange(0,self.wave_size)).add(self.phase)))
+        return torch.mean(torch.mul(x, torch.cos(torch.mul(self.freq, torch.arange(0,self.wave_size)).add(self.phase))),dim=-1)
+        #return torch.mul(x, torch.cos(torch.mul(self.freq, torch.arange(0,self.wave_size)).add(self.phase)))
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, leaky_relu_slope=0.01):
@@ -154,15 +155,16 @@ class Mirnet(nn.Module):
         self.apply(self.init_weights)
 
     def forward(self, x):
+        z_size = x.shape[:-1] + (self.num_freqs,)
+        z = torch.empty(z_size,dtype=torch.float)
         for i in range(self.num_freqs):
-            x = self.fouriers[i](x)
+            z[:,:,:,i] = self.fouriers[i](x)
 
-        convblock_out = self.conv_block(x)
+        convblock_out = self.conv_block(z)
         resblock1_out = self.res_block1(convblock_out)
         resblock2_out = self.res_block2(resblock1_out)
         resblock3_out = self.res_block3(resblock2_out)
         poolblock_out = self.pool_block(resblock3_out)
-        import pdb; pdb.set_trace()
         classifier_out = poolblock_out.permute(0, 2, 1, 3).contiguous().view((-1, 31, 512))
         classifier_out, _ = self.bilstm_classifier(classifier_out)  
 
@@ -197,7 +199,7 @@ class Mirnet(nn.Module):
 
 def empty_onehot(target: torch.Tensor, num_classes: int):
     #onehot_size = target.size() + (num_classes, )
-    onehot_size = (target.shape[0],target.shape[1], num_classes )
+    onehot_size = (target.shape[0] * target.shape[2], num_classes )
     return torch.FloatTensor(*onehot_size).zero_()
 
 
@@ -261,7 +263,7 @@ class CrossEntropyLossWithGaussianSmoothedLabels2(nn.Module):
                     blur = torch.clamp(target + (direction * dist), min=0, max=self.num_classes - 1)
                     target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
 
-            import pdb; pdb.set_trace()
+            pred_logit = pred_logit.view(pred_logit.shape[0]*pred_logit.shape[1],pred_logit.shape[2])
             return self.cross_entropy(pred_logit, target_onehot)
 
 #net = Mirnet()
