@@ -5,15 +5,21 @@ import dataset as ds
 #from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
+print("Initializing network")
 net = Mirnet(num_class=ds.NUM_CLASSES)
 loss_fn = CrossEntropyLossWithGaussianSmoothedLabels2(num_classes=ds.NUM_CLASSES)
 
 optimizer = optim.Adam(net.parameters(), lr=0.002)
 
+print("Reading Train List")
 train_songs, test_songs = ds.get_train_test_songs()
         
 seq_len = 31
 batch_size = 64
+
+print("GPU Status")
+print(torch.cuda.is_available())
+print(torch.cuda.device_count())
 
 for epoch in range(2):  # loop over the dataset multiple times
     i=0
@@ -23,6 +29,7 @@ for epoch in range(2):  # loop over the dataset multiple times
         optimizer.zero_grad()
 
         #load track data and convert to tensor
+        print("Loading track " + song)
         x_data,y_data = ds.datify_track(song)
         #import pdb;pdb.set_trace()
 
@@ -51,10 +58,10 @@ for epoch in range(2):  # loop over the dataset multiple times
             optimizer.step()
 
             # print statistics
-            running_loss += loss.item()
+            #running_loss += loss.item()
+            step_loss = loss.item()
             print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 2000))
-            running_loss = 0.0
+                  (epoch + 1, i + 1, step_loss))
             i+=1
 #save(net, 'trainedModel')
 print('Finished Training')
