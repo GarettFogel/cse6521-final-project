@@ -268,17 +268,17 @@ class CrossEntropyLossWithGaussianSmoothedLabels2(nn.Module):
         return math.exp(-math.pow(2, dist) / (2 * math.pow(2, sigma)))
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
-
+        pred_logit = torch.log_softmax(pred, dim=self.dim)
+        target_onehot = empty_onehot(target, self.num_classes).to(target.device)
         with torch.no_grad():
-            pred_logit = torch.log_softmax(pred, dim=self.dim)
-            target_onehot = empty_onehot(target, self.num_classes).to(target.device)
+
             for dist in range(self.blur_range, -1, 1):
                 for direction in [1, -1]:
                     blur = torch.clamp(target + (direction * dist), min=0, max=self.num_classes - 1)
                     target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
 
-            pred_logit = pred_logit.view(pred_logit.shape[0]*pred_logit.shape[1],pred_logit.shape[2])
-            return self.cross_entropy(pred_logit, target_onehot)
+        pred_logit = torch.log_softmax(pred, dim=self.dim)
+        target_onehot = empty_onehot(target, self.num_classes).to(target.device)
 
 #net = Mirnet()
 #loss_fn = CrossEntropyLossWithGaussianSmoothedLabels()
