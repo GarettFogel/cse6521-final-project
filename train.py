@@ -1,3 +1,4 @@
+print("Test of standard out")
 import torch
 import torch.optim as optim
 import numpy as np
@@ -5,7 +6,7 @@ import dataset as ds
 #from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
-print("Initializing network")
+print("Initializing network", flush=True)
 net = Mirnet(num_class=ds.NUM_CLASSES)
 loss_fn = CrossEntropyLossWithGaussianSmoothedLabels2(num_classes=ds.NUM_CLASSES)
 
@@ -21,7 +22,7 @@ print("GPU Status")
 print(torch.cuda.is_available())
 print(torch.cuda.device_count())
 
-for epoch in range(2):  # loop over the dataset multiple times
+for epoch in range(20):  # loop over the dataset multiple times
     i=0
     for song in train_songs:
         # zero the parameter gradients
@@ -29,7 +30,7 @@ for epoch in range(2):  # loop over the dataset multiple times
         optimizer.zero_grad()
 
         #load track data and convert to tensor
-        print("Loading track " + song)
+        print("Loading track " + song, flush=True)
         x_data,y_data = ds.datify_track(song)
         #import pdb;pdb.set_trace()
 
@@ -61,7 +62,7 @@ for epoch in range(2):  # loop over the dataset multiple times
             #running_loss += loss.item()
             step_loss = loss.item()
             print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, step_loss))
+                  (epoch + 1, i + 1, step_loss), flush=True)
             i+=1
 #save(net, 'trainedModel')
 print('Finished Training')
