@@ -15,6 +15,7 @@ seq_len = 31
 batch_size = 64
 
 for epoch in range(2):  # loop over the dataset multiple times
+    i=0
     for song in train_songs:
         # zero the parameter gradients
         running_loss=0.0
@@ -46,12 +47,13 @@ for epoch in range(2):  # loop over the dataset multiple times
             preds = net.forward(seq_in)
             loss = loss_fn.forward(preds, labels)
             loss.backward()
-            opimizer.step()
+            optimizer.step()
 
             # print statistics
             running_loss += loss.item()
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
+            i+=1
 
 print('Finished Training')
