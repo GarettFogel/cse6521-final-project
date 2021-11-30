@@ -192,6 +192,11 @@ class Mirnet(nn.Module):
 
         return classifier_out
 
+    def predict(self,raw_pred):
+        pred_logits = torch.softmax(raw_pred, dim=-1)
+        preds = torch.argmax(pred_logits,-1)
+        return preds.view((-1))
+
     @staticmethod
     def init_weights(m):
             if isinstance(m, nn.Linear):
