@@ -54,20 +54,31 @@ class FourierLayer2(nn.Module):
 
 class FourierLayer3(nn.Module):
     
-    def __init__(self, wave_size):
+    def __init__(self, wave_size, num_freqs):
         super().__init__()
+        self.num_freqs = num_freqs
         self.wave_size = wave_size
-        freq = torch.Tensor((1))
-        self.freq = nn.Parameter(freq)  
-        phase = torch.Tensor((1))
-        self.phase = nn.Parameter(phase)
+        freqs = torch.Tensor((num_freqs))
+        self.freqs = nn.Parameter(freqs)  
+        phases = torch.Tensor((num_freqs))
+        self.phases = nn.Parameter(phases)
 
         # initialize weights and biases
-        nn.init.uniform_(self.freq, a=0, b=1.0)
-        nn.init.uniform_(self.phase, a=0, b=1.0)
+        nn.init.uniform_(self.freqs, a=0, b=1.0)
+        nn.init.uniform_(self.phases, a=0, b=1.0)
 
     def forward(self, x):
-        return torch.mean(torch.mul(x, torch.cos(torch.mul(self.freq, torch.arange(0,self.wave_size)).add(self.phase))),dim=-1)
+        fourier_size = (x.shape[-1], self.num_freqs)
+        #generate basis of cosine waves
+        cos_waves = torch.empty(fourier_size,dtype=torch.float)
+        for i in range(self.num_freqs):
+            cos_waves[:,i] = torch.cos(torch.mul(self.freqs[i], torch.arange(0,self.wave_size)).add(self.phases[i]))
+
+        #perform fourier transform via matrix multiplication and mean operation
+        x = torch.unsqueeze(x,-2)
+        freq_coeffs = torch.mul(1/self.wave_size, torch.matmul(x,cos_waves) )
+        freq_coeffs = torch.squeeze(freq_coeffs,-2)
+        return freq_coeffs
         #return torch.mul(x, torch.cos(torch.mul(self.freq, torch.arange(0,self.wave_size)).add(self.phase)))
 
 class ResBlock(nn.Module):
@@ -109,11 +120,13 @@ class Mirnet(nn.Module):
         super().__init__()
         self.seq_len = seq_len  # 31
         self.num_class = num_class
-        self.fouriers = []
+        #self.fouriers = []
         self.num_freqs = 513
-        for i in range(self.num_freqs):
+        self.fourier = FourierLayer3(1024, self.num_freqs)
+        #for i in range(self.num_freqs):
             #self.fouriers.append(FourierLayer2(31, 1024))
-            self.fouriers.append(FourierLayer3(1024))
+            #self.fouriers.append(FourierLayer3(1024, self.num_freqs))
+
         self.conv_block = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=False), 
             nn.BatchNorm2d(num_features=64),
@@ -155,10 +168,11 @@ class Mirnet(nn.Module):
         self.apply(self.init_weights)
 
     def forward(self, x):
-        z_size = x.shape[:-1] + (self.num_freqs,)
-        z = torch.empty(z_size,dtype=torch.float)
-        for i in range(self.num_freqs):
-            z[:,:,:,i] = self.fouriers[i](x)
+        #z_size = x.shape[:-1] + (self.num_freqs,)
+        #z = torch.empty(z_size,dtype=torch.float)
+        #for i in range(self.num_freqs):
+        #    z[:,:,:,i] = self.fouriers[i](x)
+        z = self.fourier(x)
 
         convblock_out = self.conv_block(z)
         resblock1_out = self.res_block1(convblock_out)
