@@ -19,7 +19,7 @@ def get_train_test_songs():
     test_songs = np.squeeze(pd.read_csv("test_list.csv"))
     return train_songs, test_songs
 
-def datify_track(track_name, preprocess=False, one_hot=False):
+def datify_track(track_name, preprocess=False, one_hot=True):
     '''Tacks a track name and retruns x_data,ydata where 
     x_data is a an array of data windows 
     y_data is a an array of one hot vectors containin the label for each window as a one-hot vector'''
@@ -77,7 +77,6 @@ def datify_track(track_name, preprocess=False, one_hot=False):
         y_data = np.empty((num_windows,NUM_CLASSES))
     if(one_hot==False):
         y_data = np.empty((num_windows,1))
-    #import pdb;pdb.set_trace()
     for i in range(num_windows):
         start_time = i*hop_size / samp_rate
         end_time = (i*hop_size+window_size) / samp_rate
@@ -114,8 +113,10 @@ def get_note_one_hot(note):
 
 def get_note_label(note):
     if(note==NO_VOICE):
-        note_pos=-1
-    note_pos = np.where(NOTES==note)
+        note_pos=NUM_CLASSES-1
+    else:
+        note_pos = np.where(NOTES==note)
+    return note_pos
 
 def one_hot(pos,num_classes):
     vec = np.zeros(num_classes)

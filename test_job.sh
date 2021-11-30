@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=minimal_trap
+#SBATCH --job-name=MIR_train
 #SBATCH --time=2:00
 #SBATCH --nodes=1 --ntasks-per-node=1
 #SBATCH --output=%x.%A.log

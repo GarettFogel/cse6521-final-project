@@ -45,8 +45,12 @@ class FourierLayer2(nn.Module):
         #make sure the values are between 0 and 1
 
         # initialize weights and biases
-        nn.init.uniform_(self.weight, a=0, b=1.0)
-        nn.init.uniform_(self.bias, a=0, b=1.0)
+         # hz = samp_rate * freq / 2*pi
+        samp_rate = 8000
+        min_freq = 2*math.pi*20 / samp_rate
+        max_freq = 1/2
+        nn.init.uniform_(self.weight, a=min_freq, b=max_freq)
+        nn.init.uniform_(self.bias, a=0, b=math.pi)
 
     def forward(self, x):
         #adjusted = torch.tensor([])
@@ -269,15 +273,19 @@ class CrossEntropyLossWithGaussianSmoothedLabels2(nn.Module):
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
         pred_logit = torch.log_softmax(pred, dim=self.dim)
+        #reshape tensors to 2d
         pred_logit = pred_logit.view(pred_logit.shape[0]*pred_logit.shape[1],pred_logit.shape[2])
-        target_onehot = empty_onehot(target, self.num_classes).to(target.device)
-        with torch.no_grad():
-            for dist in range(self.blur_range, -1, 1):
-                for direction in [1, -1]:
-                    blur = torch.clamp(target + (direction * dist), min=0, max=self.num_classes - 1)
-                    target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
+        target = target.view(target.shape[0]*target.shape[2],target.shape[3])
+        
+        #target_onehot = empty_onehot(target, self.num_classes).to(target.device)
+        #with torch.no_grad():
+        #    for dist in range(self.blur_range, -1, 1):
+        #        for direction in [1, -1]:
+        #            blur = torch.clamp(target + (direction * dist), min=0, max=self.num_classes - 1)
+        #            target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
 
-        return self.cross_entropy(pred_logit, target_onehot)
+        #return self.cross_entropy(pred_logit, target_onehot)
+        return self.cross_entropy(pred_logit, target)
 
 #net = Mirnet()
 #loss_fn = CrossEntropyLossWithGaussianSmoothedLabels()
