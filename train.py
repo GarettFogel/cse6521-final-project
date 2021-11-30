@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 import numpy as np
 import dataset as ds
+#from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
 net = Mirnet(num_class=ds.NUM_CLASSES)
@@ -53,5 +54,5 @@ for epoch in range(2):  # loop over the dataset multiple times
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
-
+#save(net, 'trainedModel')
 print('Finished Training')
