@@ -3,7 +3,7 @@ import torch
 import torch.optim as optim
 import numpy as np
 import dataset as ds
-#from save_load_model import *
+from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
 def eval_test(net,test_songs):
@@ -64,7 +64,6 @@ for epoch in range(20):  # loop over the dataset multiple times
     for song in train_songs:
         # zero the parameter gradients
         running_loss=0.0
-        optimizer.zero_grad()
 
         #load track data and convert to tensor
         print("Loading track " + song, flush=True)
@@ -90,6 +89,7 @@ for epoch in range(20):  # loop over the dataset multiple times
             labels = torch.tensor(y_data[batch_id],dtype=torch.float)
 
             #foward and backward pass
+            optimizer.zero_grad()
             preds = net.forward(seq_in)
             loss = loss_fn.forward(preds, labels)
             loss.backward()
@@ -103,6 +103,6 @@ for epoch in range(20):  # loop over the dataset multiple times
             i+=1
 
     eval_test(net,test_songs)
-    
-#save(net, 'trainedModel')
+    print("saving model") 
+    save(net, 'models/mirnet'+str(epoch))
 print('Finished Training')
