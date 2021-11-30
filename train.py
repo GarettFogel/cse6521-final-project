@@ -7,7 +7,7 @@ from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 net = Mirnet(num_class=ds.NUM_CLASSES)
 loss_fn = CrossEntropyLossWithGaussianSmoothedLabels2(num_classes=ds.NUM_CLASSES)
 
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.Adam(net.parameters(), lr=0.002)
 
 train_songs, test_songs = ds.get_train_test_songs()
         
