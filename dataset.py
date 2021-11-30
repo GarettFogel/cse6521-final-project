@@ -125,5 +125,5 @@ def one_hot(pos,num_classes):
 
 #Testing code
 #track="LizNelson_Rainfall"
-#datify_track(track)
+#datify_track(track,preprocess=True)
 

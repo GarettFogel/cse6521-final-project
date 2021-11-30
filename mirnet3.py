@@ -120,17 +120,17 @@ class ResBlock(nn.Module):
         return x
 
 class Mirnet(nn.Module):
-    def __init__(self, num_class=722, seq_len=31, leaky_relu_slope=0.01):
+    def __init__(self, num_class=722, seq_len=31, leaky_relu_slope=0.01, use_f_layer=True):
         super().__init__()
         self.seq_len = seq_len  # 31
         self.num_class = num_class
         #self.fouriers = []
         self.num_freqs = 513
-        self.fourier = FourierLayer3(1024, self.num_freqs)
-        #for i in range(self.num_freqs):
-            #self.fouriers.append(FourierLayer2(31, 1024))
-            #self.fouriers.append(FourierLayer3(1024, self.num_freqs))
-
+        if(use_f_layer==True):
+            self.fourier = FourierLayer3(1024, self.num_freqs)
+        else:
+            self.fourier = torch.nn.Identity()
+        
         self.conv_block = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=False), 
             nn.BatchNorm2d(num_features=64),
@@ -172,12 +172,10 @@ class Mirnet(nn.Module):
         self.apply(self.init_weights)
 
     def forward(self, x):
-        #z_size = x.shape[:-1] + (self.num_freqs,)
-        #z = torch.empty(z_size,dtype=torch.float)
-        #for i in range(self.num_freqs):
-        #    z[:,:,:,i] = self.fouriers[i](x)
+        #Apply fourier layer or identify if data was preprocessed with fourier transform
         z = self.fourier(x)
 
+        #Rest of network
         convblock_out = self.conv_block(z)
         resblock1_out = self.res_block1(convblock_out)
         resblock2_out = self.res_block2(resblock1_out)

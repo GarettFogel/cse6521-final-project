@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=MIR_train2
-#SBATCH --time=1:00:00
+#SBATCH --job-name=MIR_train_nof
+#SBATCH --time=2:00:00
 #SBATCH --nodes=1 
 #SBATCH --ntasks=4
 #SBATCH --gpus-per-node=2

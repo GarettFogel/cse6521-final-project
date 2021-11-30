@@ -1,4 +1,3 @@
-print("Test of standard out", flush=True)
 import torch
 import torch.optim as optim
 import numpy as np
@@ -6,11 +5,20 @@ import dataset as ds
 from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
+USE_F_LAYER=False
+print("Using Fourier Layer? " + str(USE_F_LAYER),flush=True)
+if(USE_F_LAYER):
+    preprocess=False
+    use_f_layer=True
+else:
+    preprocess=True
+    use_f_layer=False
+
 def eval_test(net,test_songs): 
     print("Running on eval ", flush=True)
     song_accs = []
     for song in test_songs:
-        x_data,y_data = ds.datify_track(song, one_hot=False)
+        x_data,y_data = ds.datify_track(song, one_hot=False, preprocess=preprocess)
         
         #split into chunks of seq_len frames and batch
         window_size = x_data.shape[1]
@@ -48,7 +56,7 @@ def eval_test(net,test_songs):
     
 
 print("Initializing network", flush=True)
-net = Mirnet(num_class=ds.NUM_CLASSES)
+net = Mirnet(num_class=ds.NUM_CLASSES, use_f_layer=use_f_layer)
 loss_fn = CrossEntropyLossWithGaussianSmoothedLabels2(num_classes=ds.NUM_CLASSES)
 
 optimizer = optim.Adam(net.parameters(), lr=0.002)
@@ -63,7 +71,7 @@ print("GPU Status")
 print(torch.cuda.is_available())
 print(torch.cuda.device_count())
 
-eval_test(net,test_songs)
+#eval_test(net,test_songs)
 
 for epoch in range(20):  # loop over the dataset multiple times
     i=0
@@ -74,7 +82,7 @@ for epoch in range(20):  # loop over the dataset multiple times
 
         #load track data and convert to tensor
         print("Loading track " + song, flush=True)
-        x_data,y_data = ds.datify_track(song)
+        x_data,y_data = ds.datify_track(song, preprocess=preprocess)
         #import pdb;pdb.set_trace()
         
         #split into chunks of seq_len frames and batch
@@ -108,8 +116,9 @@ for epoch in range(20):  # loop over the dataset multiple times
             step_loss = loss.item()
             print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, step_loss), flush=True)
             i+=1
-        
-        print('song loss: ' + str(song_loss/num_batches), flush=True)
+       
+        if(num_batches>0): 
+            print('song loss: ' + str(song_loss/num_batches), flush=True)
 
     eval_test(net,test_songs)
     print("saving model", flush=True) 
