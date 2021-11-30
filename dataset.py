@@ -65,7 +65,7 @@ def datify_track(track_name, preprocess=False, one_hot=True):
     #get labels for that vocal stem
     if(dominant_vocal_stem_id == 999999):
         print("No dominant vocal track for " + track_name)
-        return -1
+        return -1,-1
 
     annos = np.array(mtrack.stems[dominant_vocal_stem_id].pitch_annotation)
     anno_times = annos[:,0]

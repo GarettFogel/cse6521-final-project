@@ -33,7 +33,7 @@ for epoch in range(20):  # loop over the dataset multiple times
         print("Loading track " + song, flush=True)
         x_data,y_data = ds.datify_track(song)
         #import pdb;pdb.set_trace()
-
+        
         #split into chunks of seq_len frames and batch
         window_size = x_data.shape[1]
         num_classes = y_data.shape[1]

@@ -272,7 +272,7 @@ class CrossEntropyLossWithGaussianSmoothedLabels2(nn.Module):
         return math.exp(-math.pow(2, dist) / (2 * math.pow(2, sigma)))
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
-        pred_logit = torch.log_softmax(pred, dim=self.dim)
+        pred_logit = torch.softmax(pred, dim=self.dim)
         #reshape tensors to 2d
         pred_logit = pred_logit.view(pred_logit.shape[0]*pred_logit.shape[1],pred_logit.shape[2])
         target = target.view(target.shape[0]*target.shape[2],target.shape[3])
