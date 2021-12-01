@@ -5,19 +5,23 @@ import dataset as ds
 from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
-USE_F_LAYER=False
+USE_F_LAYER=True
 print("Using Fourier Layer? " + str(USE_F_LAYER),flush=True)
 if(USE_F_LAYER):
     preprocess=False
     use_f_layer=True
+    name="yesf" 
 else:
     preprocess=True
     use_f_layer=False
+    name="nof"
 
 def eval_test(net,test_songs): 
     print("Running on eval ", flush=True)
     song_accs = []
-    for song in test_songs:
+    #for song in test_songs:
+    song=test_songs[0]
+    while(True):
         x_data,y_data = ds.datify_track(song, one_hot=False, preprocess=preprocess)
         
         #split into chunks of seq_len frames and batch
@@ -74,7 +78,7 @@ print(torch.cuda.device_count())
 #eval_test(net,test_songs)
 
 for epoch in range(20):  # loop over the dataset multiple times
-    i=0
+    print("Epoch: " + str(epoch), flush=True)
 
     for song in train_songs:
         song_loss=0
@@ -122,6 +126,6 @@ for epoch in range(20):  # loop over the dataset multiple times
 
     eval_test(net,test_songs)
     print("saving model", flush=True) 
-    save(net, 'models/mirnet'+str(epoch)+'.pt')
+    save(net, 'models/mirnet'+name+str(epoch)+'.pt')
 
 print('Finished Training')

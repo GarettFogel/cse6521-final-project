@@ -27,7 +27,7 @@ def datify_track(track_name, preprocess=False, one_hot=True):
     mtrack = mdb.MultiTrack(track_name)
 
     ## Read/Format x data
-    hop_size = 80 #hop size used by paper 
+    hop_size = 300 #80 #hop size used by paper 
     window_size = 1024 #window size used by paper
     wav, samp_rate = lr.load(mtrack.mix_path, sr=8000) #8000 seems to be rate used by paper
     wav_length = wav.shape[0]
@@ -40,7 +40,7 @@ def datify_track(track_name, preprocess=False, one_hot=True):
     # For regular nn, precprocess data using fourier transform and hanning window
     #create 2D array of audio chunks    
     if(preprocess):
-        x_data = lr.stft(wav, n_fft=1024, hop_length=window_size, win_length=window_size, window='hann')
+        x_data = lr.stft(wav, n_fft=1024, hop_length=hop_size, win_length=window_size, window='hann')
         x_data = np.transpose(x_data)
         x_data = np.abs(x_data) #magnitude of complex values
     else:

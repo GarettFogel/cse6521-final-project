@@ -8,54 +8,6 @@ import torch.nn as nn
 import torch
 import math
 
-class FourierLayer(nn.Module):
-    
-    def __init__(self, size):
-        super().__init__()
-        self.size_in, self.size_out = size, size
-        weight = torch.Tensor(1)
-        self.weight = nn.Parameter(weight)  
-        bias = torch.Tensor(1)
-        self.bias = nn.Parameter(bias)
-        self.range = torch.tensor(range(1, size+1))
-        #make sure the values are between 0 and 1
-
-        # initialize weights and biases
-        nn.init.uniform_(self.weight, a=0, b=1.0)
-        nn.init.uniform_(self.bias, a=0, b=1.0)
-
-    def forward(self, x):
-    	#adjusted = torch.tensor([])
-    	return torch.mul(x, torch.cos(torch.mul(self.weight, self.range).add(self.bias)))
-
-class FourierLayer2(nn.Module):
-    
-    def __init__(self, size, size2):
-        super().__init__()
-        self.frame_size, self.wave_size = size, size2
-        weight = torch.Tensor((self.frame_size, self.wave_size))
-        self.weight = nn.Parameter(weight)  
-        bias = torch.Tensor((self.frame_size, self.wave_size))
-        self.bias = nn.Parameter(bias)
-        ran = []
-        for i in range(self.frame_size):
-            ran.append(range(1, self.wave_size+1))
-
-        self.range = torch.tensor(ran)
-        #make sure the values are between 0 and 1
-
-        # initialize weights and biases
-         # hz = samp_rate * freq / 2*pi
-        samp_rate = 8000
-        min_freq = 2*math.pi*20 / samp_rate
-        max_freq = 1/2
-        nn.init.uniform_(self.weight, a=min_freq, b=max_freq)
-        nn.init.uniform_(self.bias, a=0, b=math.pi)
-
-    def forward(self, x):
-        #adjusted = torch.tensor([])
-        return torch.mul(x, torch.cos(torch.mul(self.weight, self.range).add(self.bias)))
-
 class FourierLayer3(nn.Module):
     
     def __init__(self, wave_size, num_freqs):
@@ -68,8 +20,13 @@ class FourierLayer3(nn.Module):
         self.phases = nn.Parameter(phases)
 
         # initialize weights and biases
-        nn.init.uniform_(self.freqs, a=0, b=1.0)
-        nn.init.uniform_(self.phases, a=0, b=1.0)
+        #nn.init.uniform_(self.freqs, a=0, b=1.0)
+        #nn.init.uniform_(self.phases, a=0, b=1.0)
+        samp_rate = 8000
+        min_freq = 2*math.pi*27 / samp_rate #A0
+        max_freq = 2*math.pi*4186.6 / samp_rate #C8 #1/2 #avoid nyquist 
+        nn.init.uniform_(self.freqs, k=min_freq, b=max_freq)
+        nn.init.uniform_(self.phases, a=0, b=math.pi)
 
     def forward(self, x):
         fourier_size = (x.shape[-1], self.num_freqs)
@@ -80,7 +37,8 @@ class FourierLayer3(nn.Module):
 
         #perform fourier transform via matrix multiplication and mean operation
         x = torch.unsqueeze(x,-2)
-        freq_coeffs = torch.mul(1/self.wave_size, torch.matmul(x,cos_waves) )
+        #import pdb; pdb.set_trace()
+        freq_coeffs = torch.abs(torch.mul(1/self.wave_size, torch.matmul(x,cos_waves)))
         freq_coeffs = torch.squeeze(freq_coeffs,-2)
         return freq_coeffs
         #return torch.mul(x, torch.cos(torch.mul(self.freq, torch.arange(0,self.wave_size)).add(self.phase)))
