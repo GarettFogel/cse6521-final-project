@@ -66,19 +66,19 @@ def eval_test(net,test_songs):
             song_accs.append(num_correct/num_points)
             
 
-        print("Average Validation Accuracy " + str(np.mean(song_accs)), flush=True)
-        all_preds = np.concatenate(all_preds).astype(int)
-        all_targets = np.concatenate(all_targets).astype(int)
-        #import pdb; pdb.set_trace()
-        print("rca: " + str(rca(all_preds, all_targets)))
-        print("oa: " + str(oa(all_preds, all_targets)))
-        print("rpa: " + str(rpa(all_preds, all_targets)))
-        print(VoiceConfusionMatrix(all_preds,all_targets))
-        with np.printoptions(threshold=np.inf):
-            conf_mat = np.round_(PitchConfusionMatrix(all_preds,all_targets),3)
-            for row in range(conf_mat.shape[0]):
-                print(",".join(str(val) for val in conf_mat[row]))
-            #print(PitchConfusionMatrix(all_preds,all_targets))
+    print("Average Validation Accuracy " + str(np.mean(song_accs)), flush=True)
+    all_preds = np.concatenate(all_preds).astype(int)
+    all_targets = np.concatenate(all_targets).astype(int)
+    #import pdb; pdb.set_trace()
+    print("rca: " + str(rca(all_preds, all_targets)))
+    print("oa: " + str(oa(all_preds, all_targets)))
+    print("rpa: " + str(rpa(all_preds, all_targets)))
+    print(VoiceConfusionMatrix(all_preds,all_targets))
+    with np.printoptions(threshold=np.inf):
+        conf_mat = np.round_(PitchConfusionMatrix(all_preds,all_targets),3)
+        for row in range(conf_mat.shape[0]):
+            print(",".join(str(val) for val in conf_mat[row]))
+        #print(PitchConfusionMatrix(all_preds,all_targets))
     
 
 print("Initializing network", flush=True)
