@@ -78,6 +78,8 @@ def datify_track(track_name, preprocess=False, one_hot=True,blur=False):
         y_data = np.empty((num_windows,NUM_CLASSES))
     if(one_hot==False):
         y_data = np.empty((num_windows,1))
+    
+    voice_locs = []
     for i in range(num_windows):
         start_time = i*hop_size / samp_rate
         end_time = (i*hop_size+window_size) / samp_rate
@@ -86,16 +88,16 @@ def datify_track(track_name, preprocess=False, one_hot=True,blur=False):
         win_freqs = anno_freqs[np.where(np.logical_and(anno_times >= start_time, anno_times <= end_time))[0]]
         win_notes=get_pitch_labels(win_freqs)
         dominant_note = stats.mode(win_notes)[0][0] #May want to change this
-        #if(dominant_note != NO_VOICE):
-        #    import pdb; pdb.set_trace()
-        #print(dominant_note)
+        if(dominant_note != NO_VOICE):
+            voice_locs.append(i)
         if(one_hot):
             y_data[i] = get_note_one_hot(dominant_note,blur=blur)
         if(one_hot==False):
             y_data[i] = get_note_label(dominant_note)
-
-    #import pdb; pdb.set_trace()
-    #good_ids = np.argwhere(y_data != NO_VOICE)
+    
+    # Temporary: remove places where no voice is present
+    #y_data = y_data[voice_locs]
+    #x_data = x_data[voice_locs]
     return x_data, y_data
 
 # Check if instrument is a singer
@@ -120,7 +122,7 @@ def get_note_one_hot(note,blur=False):
 
     if(blur and note_pos != NUM_CLASSES-1):
         blur_range=3
-        for pos in range(note_pos+1, min(note_pos+blur_range+1,NUM_CLASSES)):
+        for pos in range(note_pos+1, min(note_pos+blur_range+1,NUM_CLASSES-1)):
             blur = gaussian_val(pos-note_pos)
             vec[pos] = blur
         for pos in range(max(note_pos-blur_range,0), note_pos):

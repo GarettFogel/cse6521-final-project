@@ -1,12 +1,18 @@
+import sys
 import torch
 import torch.optim as optim
 import numpy as np
 import dataset as ds
 from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
-from metrics import *
+from evaluation_functions import *
 
-USE_F_LAYER=True
+USE_F_LAYER=False
+if(len(sys.argv) < 2):
+    arg = "noname"
+else:
+    arg = sys.argv[1]
+print(arg)
 print("Using Fourier Layer? " + str(USE_F_LAYER),flush=True)
 if(USE_F_LAYER):
     preprocess=False
@@ -60,19 +66,26 @@ def eval_test(net,test_songs):
             song_accs.append(num_correct/num_points)
             
 
-    print("Average Validation Accuracy " + str(np.mean(song_accs)), flush=True)
-    all_preds = np.concatenate(all_preds)
-    all_targets = np.concatenate(all_targets)
-    print(VoiceConfusionMatrix(all_preds,all_targets))
-    with np.printoptions(threshold=np.inf):
-        print(PitchConfusionMatrix(all_preds,all_targets))
+        print("Average Validation Accuracy " + str(np.mean(song_accs)), flush=True)
+        all_preds = np.concatenate(all_preds).astype(int)
+        all_targets = np.concatenate(all_targets).astype(int)
+        #import pdb; pdb.set_trace()
+        print("rca: " + str(rca(all_preds, all_targets)))
+        print("oa: " + str(oa(all_preds, all_targets)))
+        print("rpa: " + str(rpa(all_preds, all_targets)))
+        print(VoiceConfusionMatrix(all_preds,all_targets))
+        with np.printoptions(threshold=np.inf):
+            conf_mat = np.round_(PitchConfusionMatrix(all_preds,all_targets),3)
+            for row in range(conf_mat.shape[0]):
+                print(",".join(str(val) for val in conf_mat[row]))
+            #print(PitchConfusionMatrix(all_preds,all_targets))
     
 
 print("Initializing network", flush=True)
 net = Mirnet(num_class=ds.NUM_CLASSES, use_f_layer=use_f_layer)
 loss_fn = CrossEntropyLossWithGaussianSmoothedLabels2(num_classes=ds.NUM_CLASSES)
 
-optimizer = optim.Adam(net.parameters(), lr=0.00005)
+optimizer = optim.Adam(net.parameters(), lr=0.0002)
 
 print("Reading Train List")
 train_songs, test_songs = ds.get_train_test_songs()
@@ -84,7 +97,7 @@ print("GPU Status")
 print(torch.cuda.is_available())
 print(torch.cuda.device_count())
 
-#eval_test(net,test_songs)
+eval_test(net,test_songs)
 
 for epoch in range(10):  # loop over the dataset multiple times
     print("Epoch: " + str(epoch), flush=True)
@@ -114,7 +127,9 @@ for epoch in range(10):  # loop over the dataset multiple times
 
         #import pdb; pdb.set_trace()
 
-        for batch_id in range(num_batches):
+        batch_ids = np.arange(num_batches)
+        np.random.shuffle(batch_ids)
+        for batch_id in batch_ids:
             seq_in = torch.tensor(x_data[batch_id],dtype=torch.float)
             labels = torch.tensor(y_data[batch_id],dtype=torch.float)
 
@@ -137,6 +152,6 @@ for epoch in range(10):  # loop over the dataset multiple times
 
     eval_test(net,test_songs)
     print("saving model", flush=True) 
-    save(net, 'models/mirnet'+name+str(epoch)+'.pt')
+    save(net, 'models/mirnet'+name+arg+str(epoch)+'.pt')
 
 print('Finished Training')
