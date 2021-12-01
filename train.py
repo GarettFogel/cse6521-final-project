@@ -5,7 +5,7 @@ import dataset as ds
 from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
-USE_F_LAYER=False
+USE_F_LAYER=True
 print("Using Fourier Layer? " + str(USE_F_LAYER),flush=True)
 if(USE_F_LAYER):
     preprocess=False
@@ -19,9 +19,7 @@ else:
 def eval_test(net,test_songs): 
     print("Running on eval ", flush=True)
     song_accs = []
-    #for song in test_songs:
-    song=test_songs[0]
-    while(True):
+    for song in test_songs:
         x_data,y_data = ds.datify_track(song, one_hot=False, preprocess=preprocess)
         
         #split into chunks of seq_len frames and batch
