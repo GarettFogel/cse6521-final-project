@@ -25,7 +25,7 @@ class FourierLayer3(nn.Module):
         samp_rate = 8000
         min_freq = 2*math.pi*27 / samp_rate #A0
         max_freq = 2*math.pi*4186.6 / samp_rate #C8 #1/2 #avoid nyquist 
-        nn.init.uniform_(self.freqs, k=min_freq, b=max_freq)
+        nn.init.uniform_(self.freqs, a=min_freq, b=max_freq)
         nn.init.uniform_(self.phases, a=0, b=math.pi)
 
     def forward(self, x):

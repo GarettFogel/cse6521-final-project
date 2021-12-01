@@ -5,7 +5,7 @@ import dataset as ds
 from save_load_model import *
 from  mirnet3 import Mirnet, CrossEntropyLossWithGaussianSmoothedLabels2
 
-USE_F_LAYER=True
+USE_F_LAYER=False
 print("Using Fourier Layer? " + str(USE_F_LAYER),flush=True)
 if(USE_F_LAYER):
     preprocess=False
@@ -28,6 +28,8 @@ def eval_test(net,test_songs):
         window_size = x_data.shape[1]
         num_classes = y_data.shape[1]
         num_batches = int(x_data.shape[0]/(seq_len*batch_size))
+        if(num_batches==0): 
+            print("Not enough data for song: " + str(x_data.shape[0]))
         x_data = x_data[:-(x_data.shape[0]%(seq_len*batch_size))]
         x_data = np.reshape(x_data,(num_batches,batch_size,1,seq_len,window_size))
         y_data = y_data[:-(y_data.shape[0]%(seq_len*batch_size))]
@@ -69,7 +71,7 @@ print("Reading Train List")
 train_songs, test_songs = ds.get_train_test_songs()
         
 seq_len = 31
-batch_size = 64
+batch_size = 32
 
 print("GPU Status")
 print(torch.cuda.is_available())
@@ -77,8 +79,9 @@ print(torch.cuda.device_count())
 
 #eval_test(net,test_songs)
 
-for epoch in range(20):  # loop over the dataset multiple times
+for epoch in range(10):  # loop over the dataset multiple times
     print("Epoch: " + str(epoch), flush=True)
+    i=0
 
     for song in train_songs:
         song_loss=0
