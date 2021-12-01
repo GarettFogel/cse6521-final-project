@@ -37,7 +37,6 @@ class FourierLayer3(nn.Module):
 
         #perform fourier transform via matrix multiplication and mean operation
         x = torch.unsqueeze(x,-2)
-        #import pdb; pdb.set_trace()
         freq_coeffs = torch.abs(torch.mul(1/self.wave_size, torch.matmul(x,cos_waves)))
         freq_coeffs = torch.squeeze(freq_coeffs,-2)
         return freq_coeffs
@@ -231,19 +230,28 @@ class CrossEntropyLossWithGaussianSmoothedLabels2(nn.Module):
     @staticmethod
     def gaussian_val(dist: int, sigma=1):
         return math.exp(-math.pow(2, dist) / (2 * math.pow(2, sigma)))
+        return math.exp(-math.pow(2, dist) / (2 * math.pow(2, sigma)))
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
         pred_logit = torch.softmax(pred, dim=self.dim)
         #reshape tensors to 2d
         pred_logit = pred_logit.view(pred_logit.shape[0]*pred_logit.shape[1],pred_logit.shape[2])
         target = target.view(target.shape[0]*target.shape[2],target.shape[3])
-        
-        #target_onehot = empty_onehot(target, self.num_classes).to(target.device)
-        #with torch.no_grad():
-        #    for dist in range(self.blur_range, -1, 1):
-        #        for direction in [1, -1]:
-        #            blur = torch.clamp(target + (direction * dist), min=0, max=self.num_classes - 1)
-        #            target_onehot = target_onehot.scatter_(dim=2, index=torch.unsqueeze(blur, dim=2), value=self.gaussian_decays[dist])
+        #target = target.view(target.shape[0]*target.shape[2])
+       
+        #import pdb; pdb.set_trace() 
+        #target_onehot = torch.zeros(pred_logit.shape)
+        #for id in range(target.shape[0]):
+        #    label = target[id]
+        #    target_onehot[id][label] = 1 
+        #    if(label != self.num_classes-1):
+        #        span = np.arange(label+1, min(label+self.blur_range+1))
+        #        for pos in range():
+        #            blur = self.gaussian_val(pos-target)
+        #            target_onehot[id][pos] = blur
+        #        for pos in range(max(label-blur_range), label):
+        #            blur = self.gaussian_val(pos-target)
+        #            target_onehot[id][pos] = blur
 
         #return self.cross_entropy(pred_logit, target_onehot)
         return self.cross_entropy(pred_logit, target)

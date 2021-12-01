@@ -3,6 +3,7 @@ import librosa as lr
 import numpy as np
 import pandas as pd
 from scipy import stats
+import math
 
 # mtrack_generator = mdb.load_all_multitracks()
 octave = lr.key_to_notes('C:maj')
@@ -19,7 +20,7 @@ def get_train_test_songs():
     test_songs = np.squeeze(pd.read_csv("test_list.csv"))
     return train_songs, test_songs
 
-def datify_track(track_name, preprocess=False, one_hot=True):
+def datify_track(track_name, preprocess=False, one_hot=True,blur=False):
     '''Tacks a track name and retruns x_data,ydata where 
     x_data is a an array of data windows 
     y_data is a an array of one hot vectors containin the label for each window as a one-hot vector'''
@@ -85,18 +86,24 @@ def datify_track(track_name, preprocess=False, one_hot=True):
         win_freqs = anno_freqs[np.where(np.logical_and(anno_times >= start_time, anno_times <= end_time))[0]]
         win_notes=get_pitch_labels(win_freqs)
         dominant_note = stats.mode(win_notes)[0][0] #May want to change this
+        #if(dominant_note != NO_VOICE):
+        #    import pdb; pdb.set_trace()
         #print(dominant_note)
         if(one_hot):
-            y_data[i] = get_note_one_hot(dominant_note)
+            y_data[i] = get_note_one_hot(dominant_note,blur=blur)
         if(one_hot==False):
             y_data[i] = get_note_label(dominant_note)
 
-
+    #import pdb; pdb.set_trace()
+    #good_ids = np.argwhere(y_data != NO_VOICE)
     return x_data, y_data
 
 # Check if instrument is a singer
 def is_singer(instrument):
     return instrument == "female singer" or instrument == "male singer"
+
+def gaussian_val(dist, sigma=1):
+    return math.exp(-math.pow(2, dist) / (2 * math.pow(2, sigma)))
 
 #Convert frequencies to note names (slightly different than paper)
 def get_pitch_labels(freqs):
@@ -107,15 +114,26 @@ def get_pitch_labels(freqs):
     notes = lr.hz_to_note(freqs+eps)    
     return np.array([x if x in NOTES else NO_VOICE for x in notes])
 
-def get_note_one_hot(note):
+def get_note_one_hot(note,blur=False):
     note_pos = get_note_label(note)
-    return one_hot(note_pos,NUM_CLASSES)
+    vec = one_hot(note_pos,NUM_CLASSES)
+
+    if(blur and note_pos != NUM_CLASSES-1):
+        blur_range=3
+        for pos in range(note_pos+1, min(note_pos+blur_range+1,NUM_CLASSES)):
+            blur = gaussian_val(pos-note_pos)
+            vec[pos] = blur
+        for pos in range(max(note_pos-blur_range,0), note_pos):
+            blur = gaussian_val(note_pos-pos)
+            vec[pos] = blur  
+
+    return vec 
 
 def get_note_label(note):
     if(note==NO_VOICE):
         note_pos=NUM_CLASSES-1
     else:
-        note_pos = np.where(NOTES==note)
+        note_pos = np.where(NOTES==note)[0][0]
     return note_pos
 
 def one_hot(pos,num_classes):
